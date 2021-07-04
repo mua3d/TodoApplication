@@ -12,16 +12,17 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.todoapplication.R
+import com.example.todoapplication.data.Converter
 import com.example.todoapplication.data.models.TodoData
 import com.example.todoapplication.data.viewModel.TodoViewModel
 import com.example.todoapplication.fragments.SharedViewModel
 import com.example.todoapplication.retrofit.TodoNetwork
-import com.example.todoapplication.network.model.TodoDataItem
+import com.example.todoapplication.data.models.TodoDataItem
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
-import java.lang.StringBuilder
 
+const val BASE_URL = "https://60db261d801dcb0017290ed9.mockapi.io/"
 class ListFragment : Fragment() {
 
     //initializing to do view model
@@ -30,8 +31,7 @@ class ListFragment : Fragment() {
     val serviceSetterGetter = MutableLiveData<TodoDataItem>()
 
 
-
-    private val adapter: ListAdapter by lazy {ListAdapter()}
+    private val adapter: ListAdapter by lazy { ListAdapter() }
 
 
     override fun onCreateView(
@@ -56,9 +56,6 @@ class ListFragment : Fragment() {
         }
 
 
-
-
-
         //set menu
         setHasOptionsMenu(true)
         return view
@@ -67,24 +64,25 @@ class ListFragment : Fragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
+        when (item.itemId) {
             R.id.ic_download -> getDataFromServer()
         }
+        return super.onOptionsItemSelected(item)
     }
-
-
 
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.list_fragment_menu, menu)
-        }
+    }
 
 
     private fun getDataFromServer() {
 
         val retrofitBuild = Retrofit.Builder()
-            .addConverterFactory(GsonConverterFactory
-                .create())
+            .addConverterFactory(
+                GsonConverterFactory
+                    .create()
+            )
             .baseUrl(BASE_URL)
             .build()
             .create(TodoNetwork::class.java)
@@ -97,27 +95,39 @@ class ListFragment : Fragment() {
                 response: Response<List<TodoDataItem>?>
             ) {
                 val responseBody = response.body()!!
+                val covert = Converter()
 
-                for(myData in responseBody){
+
+
+                for (myData in responseBody) {
                     val mTitle = myData.Title
                     val mPriority = myData.Priority
                     val mDescription = myData.Description
 
-                    val convertPriority = mShardViewModel.parsePriorityToInt(mPriority)
-                    val newData = TodoData(0 ,mTitle, mShardViewModel.parsePriority(mPriority),mDescription)
+
+                    val convertPriority = covert.fromPriority(mPriority)
+                    val newData = TodoData(
+                        0,
+                        mTitle,
+                        mShardViewModel.parsePriority(convertPriority),
+                        mDescription
+                    )
                     mTodoViewModel.insertData(newData)
-                    Toast.makeText(requireContext(), "downloading tasks, please wait", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "downloading tasks, please wait",
+                        Toast.LENGTH_LONG
+                    ).show()
 
 
                 }
             }
 
             override fun onFailure(call: Call<List<TodoDataItem>?>, t: Throwable) {
-                Log.d("ListFragment","onFailure: "+t.message)
+                Log.d("ListFragment", "onFailure: " + t.message)
             }
         })
 
 
-
-
+    }
 }

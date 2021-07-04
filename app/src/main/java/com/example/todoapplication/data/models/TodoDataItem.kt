@@ -1,4 +1,4 @@
-package com.example.todoapplication.network.model
+package com.example.todoapplication.data.models
 
 class TodoDataItem(
     val Description: String,
